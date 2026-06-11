@@ -145,7 +145,7 @@ socket.on("new_message", (message) => {
 // app.options("*", cors());
 
 const allowedOrigins = [
-  "http://localhost:5173",
+  "https://bat-chit-qj7n.vercel.app",
   "https://bat-chit-eight.vercel.app",
 ];
 
