@@ -53,9 +53,16 @@ const ChatBox = () => {
     });
   };
 
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  if (messages.length) {
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }
+}, [messages]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
