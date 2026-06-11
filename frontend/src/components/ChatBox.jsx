@@ -353,48 +353,54 @@ const ChatBox = () => {
             </button>
           </div>
         )}
-        <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-3 relative">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            className="hidden" 
-            accept="image/*,video/*"
-          />
-          <button 
-            type="button" 
-            onClick={() => fileInputRef.current?.click()}
-            className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors hidden sm:block mb-0.5"
-          >
-            <FiPaperclip className="text-xl" />
-          </button>
-          
-          <div className="flex-1 bg-slate-100/50 rounded-3xl flex items-end px-2 py-1.5 border border-slate-200 focus-within:border-indigo-300 focus-within:bg-white focus-within:shadow-md focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 relative group">
-            <div className="pb-1 pl-1 opacity-60 hover:opacity-100 transition-opacity"><EmojiPicker onEmojiSelect={handleEmojiSelect} /></div>
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if(e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e);
-                }
-              }}
-              className="w-full bg-transparent max-h-32 min-h-[44px] py-3 px-3 outline-none text-sm text-slate-800 resize-none scrollbar-thin scrollbar-thumb-slate-200"
-              placeholder={selectedGroup ? "Message group..." : "Type a message..."}
-              rows={1}
-            />
+        {user?.isBlocked ? (
+          <div className="w-full py-4 text-center text-rose-500 font-semibold bg-rose-50 rounded-2xl border border-rose-100">
+            You are blocked from sending messages.
           </div>
+        ) : (
+          <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-3 relative">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              accept="image/*,video/*"
+            />
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors hidden sm:block mb-0.5"
+            >
+              <FiPaperclip className="text-xl" />
+            </button>
+            
+            <div className="flex-1 bg-slate-100/50 rounded-3xl flex items-end px-2 py-1.5 border border-slate-200 focus-within:border-indigo-300 focus-within:bg-white focus-within:shadow-md focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 relative group">
+              <div className="pb-1 pl-1 opacity-60 hover:opacity-100 transition-opacity"><EmojiPicker onEmojiSelect={handleEmojiSelect} /></div>
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if(e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e);
+                  }
+                }}
+                className="w-full bg-transparent max-h-32 min-h-[44px] py-3 px-3 outline-none text-sm text-slate-800 resize-none scrollbar-thin scrollbar-thumb-slate-200"
+                placeholder={selectedGroup ? "Message group..." : "Type a message..."}
+                rows={1}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={!text.trim() && !attachment}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none text-white p-3.5 rounded-full shadow-[0_4px_14px_0_rgb(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 transition-all duration-300 flex-shrink-0 group mb-0.5"
-          >
-            <FiSend className="text-lg translate-x-[-1px] translate-y-[1px] group-hover:scale-110 transition-transform" />
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={!text.trim() && !attachment}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none text-white p-3.5 rounded-full shadow-[0_4px_14px_0_rgb(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 transition-all duration-300 flex-shrink-0 group mb-0.5"
+            >
+              <FiSend className="text-lg translate-x-[-1px] translate-y-[1px] group-hover:scale-110 transition-transform" />
+            </button>
+          </form>
+        )}
       </div>
 
       {/* PROFILE MODAL */}

@@ -64,8 +64,6 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
-  console.log("🟢 User Connected:", socket.id);
-
   // User Online
 socket.on("user_online", (userId) => {
   console.log("ONLINE USER:", userId);
@@ -78,58 +76,9 @@ socket.on("user_online", (userId) => {
 );
 
   io.emit("online_users", [...onlineUsers.keys()]);
+  io.emit("online-users-count", onlineUsers.size);
 });
 
-  // Send Message
-  // socket.on("send_message", (data) => {
-  //   const receiverSocketId = onlineUsers.get(data.receiverId);
-
-  //   if (receiverSocketId) {
-  //     io.to(receiverSocketId).emit("receive_message", data);
-  //   }
-  // });
-
-
-// socket.on("send_message", async (data) => {
-//   console.log("SEND_MESSAGE:", data);
-
-//   // console.log("ONLINE USERS:");
-//   // console.log([...onlineUsers.entries()]);
-
-//   const receiverSocketId =
-//     onlineUsers.get(data.receiverId);
-
-//   // console.log(
-//   //   "Receiver Socket:",
-//   //   receiverSocketId
-//   // );
-
-//   if (receiverSocketId) {
-//     // console.log("USER ONLINE");
-
-//     await Message.findByIdAndUpdate(
-//       data.messageId,
-//       {
-//         status: "delivered",
-//       }
-//     );
-
-//     // io.to(receiverSocketId).emit(
-//     //   "receive_message",
-//     //   // data
-//     //   newMessage
-//     // );
-
-//     io.to(socket.id).emit(
-//       "message_delivered",
-//       data.messageId
-//     );
-
-//     // console.log(
-//     //   "DELIVERED EMITTED"
-//     // );
-//   }
-// });
 socket.on("send_message", async (data) => {
   const receiverSocketId =
     onlineUsers.get(data.receiverId);
@@ -182,8 +131,6 @@ socket.on("new_message", (message) => {
 
   // Disconnect
   socket.on("disconnect", () => {
-    console.log("🔴 User Disconnected:", socket.id);
-
     for (const [userId, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
         onlineUsers.delete(userId);
@@ -192,6 +139,7 @@ socket.on("new_message", (message) => {
     }
 
     io.emit("online_users", [...onlineUsers.keys()]);
+    io.emit("online-users-count", onlineUsers.size);
   });
 });
 

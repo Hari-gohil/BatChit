@@ -3,6 +3,10 @@ const Chat = require("../models/Chat");
 
 exports.sendMessage = async (req, res) => {
   try {
+    if (req.user.isBlocked) {
+      return res.status(403).json({ message: "You are blocked from sending messages" });
+    }
+
     const { chatId, groupId, receiverId, status, text, audio } = req.body;
     
     let image = req.body.image || "";

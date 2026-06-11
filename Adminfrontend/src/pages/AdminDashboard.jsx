@@ -32,15 +32,18 @@ import {
   FiDatabase,
   FiMail,
 } from "react-icons/fi";
+import { socket } from "../socket/socket";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [activeTab, setActiveTab] = useState("overview"); // overview, users, groups
+  const [roleFilter, setRoleFilter] = useState("all");
   const [userSearch, setUserSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [onlineUsersCount, setOnlineUsersCount] = useState(0);
 
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -48,6 +51,16 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+  socket.on("online-users-count", (count) => {
+    setOnlineUsersCount(count);
+  });
+
+  return () => {
+    socket.off("online-users-count");
+  };
+}, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -140,11 +153,12 @@ const AdminDashboard = () => {
   };
 
   // filter users
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email?.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch = u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.email?.toLowerCase().includes(userSearch.toLowerCase());
+    const matchesRole = roleFilter === "all" ? true : (u.role || "user") === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
   // filter groups
   const filteredGroups = groups.filter((g) =>
@@ -221,15 +235,7 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white hover:border-indigo-200 hover:shadow-sm text-xs font-semibold transition-all duration-150"
-              title="Return to Main App"
-            >
-              <FiArrowLeft />
-              <span>Back App</span>
-            </button>
+          <div className="grid">
 
             <button
               onClick={handleLogout}
@@ -265,9 +271,8 @@ const AdminDashboard = () => {
             >
               <FiRefreshCw />
             </button>
-            <div className="text-xs text-slate-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 flex items-center space-x-1.5 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-emerald-700">Backend Connected</span>
+            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 flex items-center shadow-sm" title="Backend Connected">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
           </div>
         </header>
@@ -323,7 +328,7 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Online Users</p>
-                        <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{stats.onlineUsers ?? 0}</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{onlineUsersCount}</p>
                       </div>
                     </div>
 
@@ -361,50 +366,29 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* System Overview Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
-                      <div className="flex items-center space-x-3 text-indigo-600">
-                        <FiCpu className="text-lg" />
-                        <h4 className="font-bold text-slate-900 text-sm">System Engine</h4>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        The real-time notification engine utilizes WebSockets for sub-second communication. Keep tabs on connected nodes and overall engine load.
-                      </p>
-                      <div className="border-t border-slate-100 pt-3 flex justify-between text-xs text-slate-600 font-medium">
-                        <span>CPU Status</span>
-                        <span className="text-emerald-600 font-semibold">Normal (2.4%)</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
-                      <div className="flex items-center space-x-3 text-emerald-600">
-                        <FiDatabase className="text-lg" />
-                        <h4 className="font-bold text-slate-900 text-sm">Database Stack</h4>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        Data models persist on MongoDB. Indexes are optimized for quick user search, real-time message retrieval, and group aggregation queries.
-                      </p>
-                      <div className="border-t border-slate-100 pt-3 flex justify-between text-xs text-slate-600 font-medium">
-                        <span>Cluster State</span>
-                        <span className="text-emerald-600 font-semibold">Healthy</span>
+                  {/* Dynamic Online Users Section */}
+                  {users.filter(u => u.isOnline).length > 0 && (
+                    <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                      <h4 className="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                        Active Online Users
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {users.filter(u => u.isOnline).map((u, idx) => (
+                          <div key={`${u._id}-${idx}`} className="flex items-center space-x-4 p-4 border border-slate-100 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                              {getUserInitials(u.name)}
+                            </div>
+                            <div className="overflow-hidden">
+                              <p className="text-sm font-bold text-slate-900 truncate">{u.name} <span className="text-xs font-normal text-slate-500 capitalize">({u.role || "user"})</span></p>
+                              <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                              <p className="text-[10px] text-emerald-600 font-semibold mt-1">Online</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-
-                    <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
-                      <div className="flex items-center space-x-3 text-amber-500">
-                        <FiActivity className="text-lg" />
-                        <h4 className="font-bold text-slate-900 text-sm">Network Gateway</h4>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        Inbound client connections bypass standard firewalls via secure HTTPS handshakes. SSL certificates auto-renew.
-                      </p>
-                      <div className="border-t border-slate-100 pt-3 flex justify-between text-xs text-slate-600 font-medium">
-                        <span>Network Load</span>
-                        <span className="text-emerald-600 font-semibold">Optimal</span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </>
               )}
 
@@ -413,22 +397,35 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   {/* Actions Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="relative w-full sm:w-80">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 text-sm">
-                        <FiSearch />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search by name or email..."
-                        className="pl-10 pr-4 py-2.5 w-full rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-sm text-slate-900 placeholder-slate-400 transition-all shadow-sm"
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                      />
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="relative w-full sm:w-80">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 text-sm">
+                          <FiSearch />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search by name or email..."
+                          className="pl-10 pr-4 py-2.5 w-full rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-sm text-slate-900 placeholder-slate-400 transition-all shadow-sm"
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                        />
+                      </div>
+                      <select
+                        className="py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-sm text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm"
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                      >
+                        <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                      </select>
                     </div>
                     <div className="text-xs font-semibold text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
                       Showing {filteredUsers.length} of {users.length} registered users
                     </div>
                   </div>
+
+                  
 
                   {/* Users Table */}
                   {filteredUsers.length === 0 ? (
@@ -443,15 +440,16 @@ const AdminDashboard = () => {
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider">
                               <th className="px-6 py-4">User Info</th>
+                              <th className="px-6 py-4">Role</th>
                               <th className="px-6 py-4">Email Address</th>
                               <th className="px-6 py-4">Account Status</th>
                               <th className="px-6 py-4 text-right">Administrative Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {filteredUsers.map((user) => (
+                            {filteredUsers.map((user, idx) => (
                               <tr
-                                key={user._id}
+                                key={`${user._id}-${idx}`}
                                 className="hover:bg-slate-50 transition-colors duration-150 group"
                               >
                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -468,6 +466,9 @@ const AdminDashboard = () => {
                                       </p>
                                     </div>
                                   </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium capitalize">
+                                  {user.role || "user"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">
                                   {user.email}
@@ -551,9 +552,9 @@ const AdminDashboard = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredGroups.map((group) => (
+                      {filteredGroups.map((group, idx) => (
                          <div
-                          key={group._id}
+                          key={`${group._id}-${idx}`}
                           className="bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 group"
                         >
                           <div className="space-y-4">
@@ -587,8 +588,8 @@ const AdminDashboard = () => {
                                   <span className="text-slate-500 mr-1.5">Members ({group.members?.length || 0}):</span>
                                 </div>
                                 <div className="max-h-32 overflow-y-auto space-y-2 pr-1 border border-slate-100 rounded-lg p-2 bg-slate-50">
-                                  {group.members?.map((member) => (
-                                    <div key={member._id} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-1.5 shadow-sm">
+                                  {group.members?.map((member, idx) => (
+                                    <div key={`${member._id}-${idx}`} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-1.5 shadow-sm">
                                       <div className="flex items-center space-x-2 overflow-hidden">
                                         <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 border border-indigo-100">
                                           {getUserInitials(member.name)}
