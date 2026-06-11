@@ -144,12 +144,21 @@ socket.on("new_message", (message) => {
 // );
 // app.options("*", cors());
 
-console.log("CLIENT_URL =", process.env.CLIENT_URL);
-console.log("CLIENT_URL2 =", process.env.CLIENT_URL2);
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://bat-chit-eight.vercel.app",
+];
 
 app.use(
   cors({
-    origin: "*",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
 
