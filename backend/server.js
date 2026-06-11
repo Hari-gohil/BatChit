@@ -135,14 +135,23 @@ socket.on("new_message", (message) => {
 });
 
 // Middleware
+// app.use(
+//   cors({
+//     origin: [ process.env.CLIENT_URL, process.env.CLIENT_URL2 ],
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//   })
+// );
+// app.options("*", cors());
+
+console.log("CLIENT_URL =", process.env.CLIENT_URL);
+console.log("CLIENT_URL2 =", process.env.CLIENT_URL2);
+
 app.use(
   cors({
-    origin: [ process.env.CLIENT_URL, process.env.CLIENT_URL2 ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: "*",
   })
 );
-app.options("*", cors());
 
 
 app.use(express.json());
