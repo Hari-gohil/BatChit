@@ -19,15 +19,6 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(
-  cors({
-    origin: [ process.env.CLIENT_URL, process.env.CLIENT_URL2 ],
-    credentials: true,
-  })
-);
-
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -142,6 +133,20 @@ socket.on("new_message", (message) => {
     io.emit("online-users-count", onlineUsers.size);
   });
 });
+
+// Middleware
+app.use(
+  cors({
+    origin: [ process.env.CLIENT_URL, process.env.CLIENT_URL2 ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
+app.options("*", cors());
+
+
+app.use(express.json());
+
 
 // all Api's
 
