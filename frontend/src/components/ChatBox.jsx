@@ -94,7 +94,9 @@ const ChatBox = () => {
 
   useEffect(() => {
     if (!selectedChat || !messages.length) return;
-    messages.forEach((msg) => {
+    // Only check the last 20 messages for performance, usually unseen are recent
+    const recentMessages = messages.slice(-20);
+    recentMessages.forEach((msg) => {
       if (msg.receiver?._id === user._id && msg.status !== "seen") {
         socket.emit("message_seen", {
           messageId: msg._id,
@@ -171,6 +173,10 @@ const ChatBox = () => {
       setMessages((prev) => [...prev, newMessage]);
       setText("");
       removeAttachment();
+      // Keep focus on input after sending to prevent mobile keyboard from closing
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
     } catch (error) {
       console.log(error);
       toast.error("Failed to send message");
@@ -369,7 +375,7 @@ const ChatBox = () => {
             <button 
               type="button" 
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors hidden sm:block mb-0.5"
+              className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors mb-0.5"
             >
               <FiPaperclip className="text-xl" />
             </button>
